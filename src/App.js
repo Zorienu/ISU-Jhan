@@ -1,24 +1,33 @@
-import logo from './logo.svg';
 import './App.css';
+import { Container, Grid } from '@material-ui/core'
+
+import Navbar from './components/Navbar';
+import Control from './components/Control'
+import Switch from './components/StateConfiguration'
 
 function App() {
+  function handleChange(e) {
+    console.log(e.target.checked)
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Navbar />
+      <Container maxWidth="lg">
+        <Switch handleChange={handleChange} />
+        <Grid container spacing={4}>
+          <Grid item xs={4}>
+            <Control title={'Puerta Principal'} activated={true} />
+          </Grid>
+          <Grid item xs={4}>
+            <Control title={'Luz UV'} activated={false} />
+          </Grid>
+          <Grid item xs={4}>
+            <Control title={'Puerta Salida'} activated={true} />
+          </Grid>
+        </Grid>
+      </Container>
+    </>
   );
 }
 
