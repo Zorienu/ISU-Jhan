@@ -1,32 +1,29 @@
 import './App.css';
-import { Container, Grid } from '@material-ui/core'
+import { useState } from 'react'
+import { Container } from '@material-ui/core'
 
 import Navbar from './components/Navbar';
-import Control from './components/Control'
-import Switch from './components/StateConfiguration'
+import Controls from './components/Controls'
+import StateConfiguration from './components/StateConfiguration'
+import VideoCards from './components/VideoCards'
+import Footer from './components/Footer'
 
 function App() {
+  const [isAuto, setIsAuto] = useState(true)
   function handleChange(e) {
     console.log(e.target.checked)
+    setIsAuto(e.target.checked)
   }
 
   return (
     <>
       <Navbar />
       <Container maxWidth="lg">
-        <Switch handleChange={handleChange} />
-        <Grid container spacing={4}>
-          <Grid item xs={4}>
-            <Control title={'Puerta Principal'} activated={true} />
-          </Grid>
-          <Grid item xs={4}>
-            <Control title={'Luz UV'} activated={false} />
-          </Grid>
-          <Grid item xs={4}>
-            <Control title={'Puerta Salida'} activated={true} />
-          </Grid>
-        </Grid>
+        <StateConfiguration callback={handleChange} />
+        <VideoCards />
+        <Controls auto={isAuto} />
       </Container>
+      <Footer />
     </>
   );
 }
