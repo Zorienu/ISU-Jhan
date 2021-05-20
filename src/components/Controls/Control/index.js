@@ -9,14 +9,14 @@ const useStyles = makeStyles((theme) => ({
       padding: "10px 30px"
    }
 }))
-export default function Control({ title, activated, auto }) {
+export default function Control({ title, activated, auto, onClick }) {
    const classes = useStyles()
 
    return (
       <Paper elevation={3} className={classes.root}>
          <Typography variant="h5">{title}</Typography>
          <Box display="flex" alignItems="center">
-            {auto && <Button color="primary" variant="contained">Abrir</Button>}
+            {auto && (<Button color="primary" variant="contained" onClick={() => onClick(1 - activated)}>{activated ? "Cerrar" : "Abrir"}</Button>)}
             <Indicador activated={activated} />
          </Box>
       </Paper>

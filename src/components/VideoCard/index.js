@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { Paper, makeStyles } from "@material-ui/core";
-// import * as tf from '@tensorflow/tfjs'
+import * as tf from '@tensorflow/tfjs'
 import * as blazeface from '@tensorflow-models/blazeface'
+import { URL_SERVER } from '../../constantes';
 
 const useStyles = makeStyles((theme) => ({
    root: {
@@ -25,9 +26,25 @@ const useStyles = makeStyles((theme) => ({
 
 export default function VideoCard() {
    const classes = useStyles()
+   let estadoPilotos = 'ninguno'
+   let estadoAnteriorPilotos = 'ninguno'
+   let hacerPeticion = true
+
+   const setEstadoPilotos = (estado) => {
+      fetch(`${URL_SERVER}/pilotos/SetEstadoPilotos`, {
+         method: 'PUT',
+         headers: {
+            'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({
+            estado
+         })
+      })
+         .then(res => res.json())
+         .then(console.log)
+   }
 
    useEffect(() => {
-      //Coded by oh yicong, visit my youtube channel for more programming tutorials :)
       var model, mask_model, ctx, videoWidth, videoHeight, canvas;
       const video = document.getElementById('video');
 
@@ -52,11 +69,11 @@ export default function VideoCard() {
 
       const renderPrediction = async () => {
          try {
-            window.tf.engine().startScope()
+            tf.engine().startScope()
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             //estimatefaces model takes in 4 parameter (1) video, returnTensors, flipHorizontal, and annotateBoxes
             const predictions = await model.estimateFaces(video, true, false, false);
-            const offset = window.tf.scalar(127.5);
+            const offset = tf.scalar(127.5);
             //check if prediction length is more than 0
             if (predictions.length > 0) {
                //clear context
@@ -67,10 +84,9 @@ export default function VideoCard() {
                   var end = predictions[i].bottomRight.arraySync();
                   var size = [end[0] - start[0], end[1] - start[1]];
                   if (videoWidth < end[0] || videoHeight < end[1] || start[0] < 0 || start[1] < 0) {
-                     console.log("image out of frame")
                      continue
                   }
-                  var inputImage = window.tf.browser.fromPixels(video).toFloat()
+                  var inputImage = tf.browser.fromPixels(video).toFloat()
                   inputImage = inputImage.sub(offset).div(offset);
                   inputImage = inputImage.slice([parseInt(start[1]), parseInt(start[0]), 0], [parseInt(size[1]), parseInt(size[0]), 3])
                   inputImage = inputImage.resizeBilinear([224, 224]).reshape([1, 224, 224, 3])
@@ -79,13 +95,28 @@ export default function VideoCard() {
                   ctx.beginPath()
                   if (result[1] > result[0]) {
                      //no mask on
-                     // await fetch('http://192.168.1.11:4000/0')
+                     estadoPilotos = 'rojo'
+                     if (estadoPilotos !== estadoAnteriorPilotos && result[1] > .99 && hacerPeticion) {
+                        estadoAnteriorPilotos = 'rojo'
+                        setEstadoPilotos('rojo')
+                        hacerPeticion = false
+                        setTimeout(() => hacerPeticion = true, 3000)
+                     }
+
                      ctx.strokeStyle = "red"
                      ctx.fillStyle = "red";
                      text = "No Mask: " + (result[1] * 100).toPrecision(3).toString() + "%";
                   } else {
                      //mask on
-                     // await fetch('http://192.168.1.11:4000/1')
+                     estadoPilotos = 'verde'
+                     if (estadoPilotos !== estadoAnteriorPilotos && result[0] > .99 && hacerPeticion) {
+                        estadoAnteriorPilotos = 'verde'
+                        setEstadoPilotos('verde')
+                        fetch('http://192.168.1.12:4000/secuencia/hacerSecuencia')
+                        hacerPeticion = false
+                        setTimeout(() => hacerPeticion = true, 3000)
+                     }
+
                      ctx.strokeStyle = "green"
                      ctx.fillStyle = "green";
                      text = "Mask: " + (result[0] * 100).toPrecision(3).toString() + "%";
@@ -97,16 +128,26 @@ export default function VideoCard() {
                   ctx.fillText(text, start[0] + 5, start[1] + 20)
                }
             }
+            else if (predictions.length === 0) {
+               estadoPilotos = 'ninguno'
+               if (estadoPilotos !== estadoAnteriorPilotos && hacerPeticion) {
+                  setEstadoPilotos('ninguno')
+                  estadoAnteriorPilotos = 'ninguno'
+                  hacerPeticion = false
+                  setTimeout(() => hacerPeticion = true, 3000)
+               }
+
+            }
             //update frame
             requestAnimationFrame(renderPrediction);
-            window.tf.engine().endScope()
+            tf.engine().endScope()
          } catch (error) {
             console.log(error)
          }
       };
 
       const setupPage = async () => {
-         await window.tf.setBackend(state.backend);
+         await tf.setBackend(state.backend);
          await setupCamera();
          video.play();
 
@@ -123,7 +164,7 @@ export default function VideoCard() {
 
          model = await blazeface.load();
 
-         mask_model = await window.tf.loadLayersModel('http://localhost:3000/model/model.json');
+         mask_model = await tf.loadLayersModel('http://localhost:3000/model/model.json');
 
          renderPrediction();
       };
